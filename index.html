@@ -548,38 +548,42 @@
 
     // 2. 模拟预测函数（当前阶段：线性加权 + 归一化）
     //    未来只需替换此函数为真实的 fetch API 调用即可
-    function mockPredict(data) {
-      // 根据环境因子计算风险值（0~1）
-      let rawRisk = 
-        0.0003 * data.rainfall +
-        0.003 * data.humidity +
-        0.01 * data.temperature_variance +
-        0.1 * data.extreme_weather;
-      const risk = Math.min(1, Math.max(0, rawRisk));
-      
-      // 风险等级映射
-      let riskLevel = '';
-      if (risk < 0.4) riskLevel = '低风险';
-      else if (risk < 0.7) riskLevel = '中风险';
-      else riskLevel = '高风险';
+     // ✅ 真实 API 调用（异步）
+    async function realPredict(data) {
+      const url = 'https://risk-predict-model.zeabur.app/predict'; // 替换为您的真实后端地址
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(data),
+        });
 
-      // 高风险概率（模拟）
-      const highRiskProb = risk > 0.6 ? (risk - 0.3) : Math.max(0, risk * 0.6);
+        if (!response.ok) {
+          // 如果后端返回 HTTP 错误，抛出异常
+          const errorText = await response.text();
+          throw new Error(`HTTP ${response.status}: ${errorText}`);
+        }
 
-      return { risk, risk_level: riskLevel, high_risk_probability: highRiskProb };
+        const result = await response.json();
+        // 假设后端返回的字段为：risk, risk_level, high_risk_probability
+        // 请根据实际返回字段调整
+        return {
+          risk: result.risk,
+          risk_level: result.risk_level,
+          high_risk_probability: result.high_risk_probability,
+        };
+      } catch (error) {
+        console.error('预测请求失败:', error);
+        // 可在此处弹出错误提示
+        alert('预测失败：' + error.message);
+        // 返回一个默认值，防止页面崩溃
+        return { risk: 0.32, risk_level: '低风险', high_risk_probability: 0.12 };
+      }
     }
 
-    // 3. 真实后端接口调用（已注释，完全符合文档要求）
-    //    async function realPredict(data) {
-    //      const response = await fetch('/predict', {
-    //        method: 'POST',
-    //        headers: { 'Content-Type': 'application/json' },
-    //        body: JSON.stringify(data)
-    //      });
-    //      return await response.json();
-    //    }
-
-    return { collectInput, predict: mockPredict };
+    return { collectInput, predict: realPredict }; // 将 predict 指向 realPredict
   })();
 
   // ----------------------------------------------------------------------------
