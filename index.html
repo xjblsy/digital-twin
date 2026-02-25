@@ -436,18 +436,44 @@
 
     // 预留：加载真实GLTF模型（后续替换）
     function loadRealModel(gltfPath) {
-      // const loader = new THREE.GLTFLoader();
-      // loader.load(gltfPath, (gltf) => {
-      //   scene.remove(twinModel);
-      //   twinModel = gltf.scene;
-      //   scene.add(twinModel);
-      //   // 调整位置、缩放...
-      // });
-      console.log('预留真实模型加载接口，当前路径:', gltfPath);
-    }
+        const loader = new THREE.GLTFLoader();
+        loader.load(gltfPath, (gltf) => {
+        // 移除现有的占位符模型
+            scene.remove(twinModel);
 
-    return { init, getTwinModel, loadRealModel };
-  })();
+        // 使用真实的GLTF模型替换占位符
+            twinModel = gltf.scene;
+            scene.add(twinModel);
+
+        // --- 自动调整模型位置和大小 ---
+        // 计算模型的包围盒
+            const box = new THREE.Box3().setFromObject(twinModel);
+            const center = box.getCenter(new THREE.Vector3());
+            const size = box.getSize(new THREE.Vector3());
+
+        // 将模型居中到原点
+            twinModel.position.sub(center);
+
+        // 缩放模型使其适应场景（目标尺寸约 2 个单位）
+            const maxDim = Math.max(size.x, size.y, size.z);
+            if (maxDim > 0) {
+                const scale = 2.0 / maxDim;
+                twinModel.scale.set(scale, scale, scale);
+            }
+
+        // 启用阴影
+            twinModel.traverse((node) => {
+                if (node.isMesh) {
+                    node.castShadow = true;
+                    node.receiveShadow = true;
+                }
+            });
+
+            console.log('真实模型加载成功，已自动居中并缩放');
+        }, undefined, (error) => {
+            console.error('模型加载失败：', error);
+        });
+    }
 
   // ----------------------------------------------------------------------------
   // 模块二：风险映射与孪生状态模块 (Risk-to-Twin Mapping Layer)
@@ -589,40 +615,43 @@
   // ----------------------------------------------------------------------------
   // 全局预测流程控制器（协调各模块）
   // ----------------------------------------------------------------------------
-  window.handlePrediction = async function() {
+window.handlePrediction = async function() {
     // 1. 采集输入
     const inputData = PredictionService.collectInput();
-    
-    // 2. 调用预测服务（当前为模拟，后续可一键切换为真实API）
-    const result = PredictionService.predict(inputData);
-    
+    // 2. 调用预测服务（等待异步结果）
+    const result = await PredictionService.predict(inputData);
     // 3. 风险映射到孪生体
     RiskMapper.applyRisk(result.risk);
-    
     // 4. 更新UI状态
     UIUpdater.updateUI(result.risk, result.risk_level, result.high_risk_probability);
-  };
+};
 
   // ----------------------------------------------------------------------------
   // 初始化系统：渲染孪生场景、设置默认UI、加载示例数据
   // ----------------------------------------------------------------------------
-  (function initSystem() {
+// ----------------------------------------------------------------------------
+// 初始化系统：渲染孪生场景、设置默认UI、加载示例数据
+// ----------------------------------------------------------------------------
+(async function initSystem() {
     // 启动三维渲染
     TwinRenderer.init();
 
-    // 设置默认风险状态（执行一次模拟预测）
-    setTimeout(() => {
-      const defaultData = PredictionService.collectInput();
-      const defaultResult = PredictionService.predict(defaultData);
-      RiskMapper.applyRisk(defaultResult.risk);
-      UIUpdater.updateUI(defaultResult.risk, defaultResult.risk_level, defaultResult.high_risk_probability);
-    }, 100);
-  })();
+    // 加载真实 GLB 模型（与 HTML 同目录）
+    TwinRenderer.loadRealModel('my_digital_twin_model.glb');
 
-  // 预留：载入真实GLTF模型的示例函数（可通过控制台调用）
-  window.loadRealTwinModel = (path) => {
+    // 设置默认风险状态（执行一次模拟预测）
+    setTimeout(async () => {
+        const defaultData = PredictionService.collectInput();
+        const defaultResult = await PredictionService.predict(defaultData); // 注意 await
+        RiskMapper.applyRisk(defaultResult.risk);
+        UIUpdater.updateUI(defaultResult.risk, defaultResult.risk_level, defaultResult.high_risk_probability);
+    }, 100);
+})();
+
+// 保留控制台手动加载的接口（修复语法）
+window.loadRealTwinModel = (path) => {
     TwinRenderer.loadRealModel(path);
-  };
+};
 </script>
 </body>
 </html>
