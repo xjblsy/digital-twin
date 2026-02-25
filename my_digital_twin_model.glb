@@ -1,0 +1,145 @@
+{
+  "asset": {
+    "version": "2.0",
+    "generator": "CustomBridgeGenerator"
+  },
+  "scene": 0,
+  "scenes": [
+    {
+      "name": "BridgeScene",
+      "nodes": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "BridgeDeck",
+      "mesh": 0,
+      "translation": [0.0, 3.06, 0.0],
+      "scale": [101.21, 0.12, 3.45]
+    },
+    {
+      "name": "Pier1",
+      "mesh": 0,
+      "translation": [-14.8375, 1.5, 0.0],
+      "scale": [14.24, 3.0, 7.04]
+    },
+    {
+      "name": "Pier2",
+      "mesh": 0,
+      "translation": [-4.7475, 1.5, 0.0],
+      "scale": [13.54, 3.0, 7.07]
+    },
+    {
+      "name": "Pier3",
+      "mesh": 0,
+      "translation": [7.4825, 1.5, 0.0],
+      "scale": [13.31, 3.0, 6.97]
+    },
+    {
+      "name": "Pier4",
+      "mesh": 0,
+      "translation": [17.4675, 1.5, 0.0],
+      "scale": [13.465, 3.0, 6.435]
+    },
+    {
+      "name": "PavilionRoof",
+      "mesh": 0,
+      "translation": [0.0, 6.35, 0.0],
+      "scale": [54.935, 0.3, 3.45]
+    },
+    {
+      "name": "PavilionColumn1",
+      "mesh": 0,
+      "translation": [-20.0, 4.62, -1.5],
+      "scale": [0.16, 3.0, 0.16]
+    },
+    {
+      "name": "PavilionColumn2",
+      "mesh": 0,
+      "translation": [-20.0, 4.62, 1.5],
+      "scale": [0.16, 3.0, 0.16]
+    },
+    {
+      "name": "PavilionColumn3",
+      "mesh": 0,
+      "translation": [20.0, 4.62, -1.5],
+      "scale": [0.16, 3.0, 0.16]
+    },
+    {
+      "name": "PavilionColumn4",
+      "mesh": 0,
+      "translation": [20.0, 4.62, 1.5],
+      "scale": [0.16, 3.0, 0.16]
+    },
+    {
+      "name": "StepSample",
+      "mesh": 0,
+      "translation": [-50.33, 0.04, 0.0],
+      "scale": [0.55, 0.08, 0.34]
+    }
+  ],
+  "meshes": [
+    {
+      "name": "UnitCube",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0
+          },
+          "indices": 1,
+          "material": 0
+        }
+      ]
+    }
+  ],
+  "materials": [
+    {
+      "name": "DefaultMaterial",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [0.8, 0.8, 0.8, 1.0],
+        "metallicFactor": 0.0,
+        "roughnessFactor": 0.9
+      }
+    }
+  ],
+  "buffers": [
+    {
+      "byteLength": 384,
+      "uri": "data:application/octet-stream;base64,AAAAPwAAAL8AAAC/AAAAPwAAAD8AAAC/AAAAPwAAAD8AAAA/AAAAPwAAAL8AAAA/AAAAvwAAAL8AAAA/AAAAvwAAAD8AAAA/AAAAvwAAAD8AAAC/AAAAvwAAAD8AAAC/AAAAvwAAAD8AAAC/AAAAvwAAAD8AAAA/AAAAPwAAAD8AAAA/AAAAPwAAAL8AAAC/AAAAPwAAAD8AAAC/AAAAPwAAAD8AAAA/AAAAPwAAAD8AAAC/AAAAPwAAAL8AAAC/AAAAPwAAAL8AAAC/AAAAvwAAAD8AAAC/AAAAPwAAAD8AAAC/AAAAPwAAAD8AAAC/AAAAPwAAAD8AAAC/AAAAvwAAAL8AAAC/AAAAvwAAAL8AAAA/AAAAvwAAAL8AAAC/AAAAvwAAAD8AAAA/AAAAvwAAAD8AAAC/AAABAAIAAAACAAMABAAFAAYABAAGAAcACAAJAAoACAAKAAsADAANAA4ADAAOAA8AEAARABIAEAASABMAFAAVABYAFAAWABcA"
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 312,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 312,
+      "byteLength": 72,
+      "target": 34963
+    }
+  ],
+  "accessors": [
+    {
+      "bufferView": 0,
+      "byteOffset": 0,
+      "componentType": 5126,
+      "count": 26,
+      "type": "VEC3",
+      "min": [-0.5, -0.5, -0.5],
+      "max": [0.5, 0.5, 0.5]
+    },
+    {
+      "bufferView": 1,
+      "byteOffset": 0,
+      "componentType": 5123,
+      "count": 36,
+      "type": "SCALAR",
+      "min": [0],
+      "max": [23]
+    }
+  ]
+}
