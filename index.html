@@ -473,7 +473,25 @@
         }, undefined, (error) => {
             console.error('模型加载失败：', error);
         });
-    }
+    }, undefined, (error) => {
+        console.error('模型加载失败：', error);
+        // 添加用户提示（例如在查看器上方显示一个红色提示条）
+        const viewer = document.getElementById('viewer');
+        const errorDiv = document.createElement('div');
+        errorDiv.style.position = 'absolute';
+        errorDiv.style.top = '20px';
+        errorDiv.style.left = '50%';
+        errorDiv.style.transform = 'translateX(-50%)';
+        errorDiv.style.background = '#ef4444';
+        errorDiv.style.color = 'white';
+        errorDiv.style.padding = '8px 16px';
+        errorDiv.style.borderRadius = '8px';
+        errorDiv.style.zIndex = '100';
+        errorDiv.innerText = '模型加载失败，请检查文件路径或格式';
+        viewer.appendChild(errorDiv);
+        setTimeout(() => errorDiv.remove(), 5000); // 5秒后自动消失
+    });
+}
 
   // ----------------------------------------------------------------------------
   // 模块二：风险映射与孪生状态模块 (Risk-to-Twin Mapping Layer)
@@ -575,42 +593,43 @@
     // 2. 模拟预测函数（当前阶段：线性加权 + 归一化）
     //    未来只需替换此函数为真实的 fetch API 调用即可
      // ✅ 真实 API 调用（异步）
-    async function realPredict(data) {
-      const url = 'https://risk-predict-model.zeabur.app/predict'; // 替换为您的真实后端地址
-      try {
+async function realPredict(data) {
+    const url = 'https://risk-predict-model.zeabur.app/predict';
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10秒超时
+
+    try {
         const response = await fetch(url, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(data),
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data),
+            signal: controller.signal
         });
+        clearTimeout(timeoutId);
 
         if (!response.ok) {
-          // 如果后端返回 HTTP 错误，抛出异常
-          const errorText = await response.text();
-          throw new Error(`HTTP ${response.status}: ${errorText}`);
+            const errorText = await response.text();
+            throw new Error(`HTTP ${response.status}: ${errorText}`);
         }
-
         const result = await response.json();
-        // 假设后端返回的字段为：risk, risk_level, high_risk_probability
-        // 请根据实际返回字段调整
         return {
-          risk: result.risk,
-          risk_level: result.risk_level,
-          high_risk_probability: result.high_risk_probability,
+            risk: result.risk,
+            risk_level: result.risk_level,
+            high_risk_probability: result.high_risk_probability,
         };
-      } catch (error) {
+    } catch (error) {
+        clearTimeout(timeoutId);
         console.error('预测请求失败:', error);
-        // 可在此处弹出错误提示
-        alert('预测失败：' + error.message);
-        // 返回一个默认值，防止页面崩溃
-        return { risk: 0.32, risk_level: '低风险', high_risk_probability: 0.12 };
-      }
+        alert('预测服务暂时不可用，使用模拟数据');
+        // 返回模拟数据（可根据当前输入简单计算一个值）
+        const simulatedRisk = (data.rainfall / 3000 + data.humidity / 100 + data.temperature_variance / 50 + data.extreme_weather / 3) / 4;
+        return {
+            risk: Math.min(1, simulatedRisk),
+            risk_level: simulatedRisk < 0.4 ? '低风险' : simulatedRisk < 0.7 ? '中风险' : '高风险',
+            high_risk_probability: simulatedRisk
+        };
     }
-
-    return { collectInput, predict: realPredict }; // 将 predict 指向 realPredict
-  })();
+}
 
   // ----------------------------------------------------------------------------
   // 全局预测流程控制器（协调各模块）
