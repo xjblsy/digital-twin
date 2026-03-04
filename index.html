@@ -13,6 +13,7 @@
 
   <!-- 字体与图标库（提升界面质感） -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 
   <style>
     /* ==================== 全局样式 ==================== */
@@ -433,49 +434,46 @@
     function getTwinModel() {
       return twinModel;
     }
-
-    // 预留：加载真实GLTF模型（后续替换）
-    function loadRealModel(gltfPath) {
-        const loader = new THREE.GLTFLoader();
-        loader.load(gltfPath, (gltf) => {
+//模型导入
+function loadRealModel(gltfPath) {
+    const loader = new THREE.GLTFLoader();
+    loader.load(gltfPath, (gltf) => {
         // 移除现有的占位符模型
-            scene.remove(twinModel);
+        scene.remove(twinModel);
 
         // 使用真实的GLTF模型替换占位符
-            twinModel = gltf.scene;
-            scene.add(twinModel);
+        twinModel = gltf.scene;
+        scene.add(twinModel);
 
-        // --- 自动调整模型位置和大小 ---
-        // 计算模型的包围盒
-            const box = new THREE.Box3().setFromObject(twinModel);
-            const center = box.getCenter(new THREE.Vector3());
-            const size = box.getSize(new THREE.Vector3());
-
-        // 将模型居中到原点
-            twinModel.position.sub(center);
-
-        // 缩放模型使其适应场景（目标尺寸约 2 个单位）
-            const maxDim = Math.max(size.x, size.y, size.z);
-            if (maxDim > 0) {
-                const scale = 2.0 / maxDim;
-                twinModel.scale.set(scale, scale, scale);
-            }
+        // 自动调整模型位置和大小
+        const box = new THREE.Box3().setFromObject(twinModel);
+        const center = box.getCenter(new THREE.Vector3());
+        const size = box.getSize(new THREE.Vector3());
+        twinModel.position.sub(center);
+        const maxDim = Math.max(size.x, size.y, size.z);
+        if (maxDim > 0) {
+            const scale = 2.0 / maxDim;
+            twinModel.scale.set(scale, scale, scale);
+        }
 
         // 启用阴影
-            twinModel.traverse((node) => {
-                if (node.isMesh) {
-                    node.castShadow = true;
-                    node.receiveShadow = true;
-                }
-            });
-
-            console.log('真实模型加载成功，已自动居中并缩放');
-        }, undefined, (error) => {
-            console.error('模型加载失败：', error);
+        twinModel.traverse((node) => {
+            if (node.isMesh) {
+                node.castShadow = true;
+                node.receiveShadow = true;
+            }
         });
+      
+        const currentRiskText = document.getElementById('riskValue').innerText;
+        const currentRisk = parseFloat(currentRiskText);
+        if (!isNaN(currentRisk)) {
+            RiskMapper.applyRisk(currentRisk);
+    }
+
+        console.log('真实模型加载成功，已自动居中并缩放');
     }, undefined, (error) => {
         console.error('模型加载失败：', error);
-        // 添加用户提示（例如在查看器上方显示一个红色提示条）
+        // 用户提示
         const viewer = document.getElementById('viewer');
         const errorDiv = document.createElement('div');
         errorDiv.style.position = 'absolute';
@@ -489,9 +487,15 @@
         errorDiv.style.zIndex = '100';
         errorDiv.innerText = '模型加载失败，请检查文件路径或格式';
         viewer.appendChild(errorDiv);
-        setTimeout(() => errorDiv.remove(), 5000); // 5秒后自动消失
+        setTimeout(() => errorDiv.remove(), 5000);
     });
 }
+        return {
+        init,
+        getTwinModel,
+        loadRealModel
+    };
+})(); 
 
   // ----------------------------------------------------------------------------
   // 模块二：风险映射与孪生状态模块 (Risk-to-Twin Mapping Layer)
@@ -510,24 +514,33 @@
 
     // 应用风险状态到孪生模型
     function applyRisk(risk) {
-      const model = TwinRenderer.getTwinModel();
-      if (!model) return;
-      model.material.color.copy(riskToColor(risk));
-      // 高风险增强自发光，营造警示氛围
-      if (risk > 0.7) {
-        model.material.emissiveIntensity = 0.4;
-        model.material.emissive.setHex(0xef4444);
-      } else if (risk > 0.4) {
-        model.material.emissiveIntensity = 0.2;
-        model.material.emissive.setHex(0xfacc15);
-      } else {
-        model.material.emissiveIntensity = 0.05;
-        model.material.emissive.setHex(0x000000);
-      }
-    }
+    const model = TwinRenderer.getTwinModel();
+    if (!model) return;
 
-    return { applyRisk };
-  })();
+    const color = riskToColor(risk);
+
+    model.traverse((node) => {
+        if (node.isMesh && node.material) {
+            // 处理单个材质或材质数组
+            const materials = Array.isArray(node.material) ? node.material : [node.material];
+            materials.forEach(mat => {
+                mat.color.copy(color);
+                if (risk > 0.7) {
+                    mat.emissive.setHex(0xef4444);
+                    mat.emissiveIntensity = 0.4;
+                } else if (risk > 0.4) {
+                    mat.emissive.setHex(0xfacc15);
+                    mat.emissiveIntensity = 0.2;
+                } else {
+                    mat.emissive.setHex(0x000000);
+                    mat.emissiveIntensity = 0.05;
+                }
+            });
+        }
+    });
+}
+        return { applyRisk };
+})();
 
   // ----------------------------------------------------------------------------
   // 模块三：用户界面与状态管理模块 (UI State Management Layer)
@@ -590,8 +603,22 @@
       };
     }
 
-    // 2. 模拟预测函数（当前阶段：线性加权 + 归一化）
-    //    未来只需替换此函数为真实的 fetch API 调用即可
+function showMessage(text, isError = true) {
+    const viewer = document.getElementById('viewer');
+    const msgDiv = document.createElement('div');
+    msgDiv.style.position = 'absolute';
+    msgDiv.style.top = '20px';
+    msgDiv.style.left = '50%';
+    msgDiv.style.transform = 'translateX(-50%)';
+    msgDiv.style.background = isError ? '#ef4444' : '#22c55e';
+    msgDiv.style.color = 'white';
+    msgDiv.style.padding = '8px 16px';
+    msgDiv.style.borderRadius = '8px';
+    msgDiv.style.zIndex = '100';
+    msgDiv.innerText = text;
+    viewer.appendChild(msgDiv);
+    setTimeout(() => msgDiv.remove(), 3000);
+}
      // ✅ 真实 API 调用（异步）
 async function realPredict(data) {
     const url = 'https://risk-predict-model.zeabur.app/predict';
@@ -620,7 +647,7 @@ async function realPredict(data) {
     } catch (error) {
         clearTimeout(timeoutId);
         console.error('预测请求失败:', error);
-        alert('预测服务暂时不可用，使用模拟数据');
+        showMessage('预测服务暂时不可用，使用模拟数据');
         // 返回模拟数据（可根据当前输入简单计算一个值）
         const simulatedRisk = (data.rainfall / 3000 + data.humidity / 100 + data.temperature_variance / 50 + data.extreme_weather / 3) / 4;
         return {
@@ -630,6 +657,11 @@ async function realPredict(data) {
         };
     }
 }
+        return {
+        collectInput,
+        predict: realPredict
+    };
+})();
 
   // ----------------------------------------------------------------------------
   // 全局预测流程控制器（协调各模块）
